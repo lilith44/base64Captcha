@@ -30,17 +30,39 @@ type ItemDigit struct {
 }
 
 //NewItemDigit create a instance of item-digit
-func NewItemDigit(width int, height int, dotCount int, maxSkew float64) *ItemDigit {
+func NewItemDigit(width int, height int, dotCount int, maxSkew float64, bgColor *color.RGBA, fontColor *color.RGBA) *ItemDigit {
 	itemDigit := &ItemDigit{width: width, height: height, dotCount: dotCount, maxSkew: maxSkew}
 	//init image.Paletted
-	itemDigit.Paletted = image.NewPaletted(image.Rect(0, 0, width, height), createRandPaletteColors(dotCount))
+
+	var palette color.Palette
+	if dotCount != 0 && fontColor != nil {
+		palette = make([]color.Color, dotCount)
+		for i := range palette {
+			palette[i] = fontColor
+		}
+
+		if bgColor != nil {
+			palette = append(color.Palette{bgColor}, palette...)
+		} else {
+			palette = append(color.Palette{color.RGBA{0xFF, 0xFF, 0xFF, 0x00}}, palette...)
+		}
+	} else {
+		palette = createRandPaletteColors(dotCount, bgColor)
+	}
+
+	itemDigit.Paletted = image.NewPaletted(image.Rect(0, 0, width, height), palette)
 	return itemDigit
 }
 
-func createRandPaletteColors(dotCount int) color.Palette {
+func createRandPaletteColors(dotCount int, bgColor *color.RGBA) color.Palette {
 	p := make([]color.Color, dotCount+1)
 	// Transparent color.
-	p[0] = color.RGBA{0xFF, 0xFF, 0xFF, 0x00}
+	if bgColor != nil {
+		p[0] = bgColor
+	} else {
+		p[0] = color.RGBA{0xFF, 0xFF, 0xFF, 0x00}
+	}
+
 	// Primary color.
 	prim := color.RGBA{
 		uint8(rand.Intn(129)),
